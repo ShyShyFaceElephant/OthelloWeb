@@ -43,7 +43,7 @@ app.post("/move", function (req, res) {
         console.log(`JSON 数据已成功写入文件 ${'input.json'}`);
 
         // 要执行的可执行文件
-        exec('.\\main', (error, stdout, stderr) => {
+        exec('.\\main.exe', (error, stdout, stderr) => {
             if (error) {
                 console.error(`执行出错: ${error.message}`);
                 return res.status(500).send('执行出错');
@@ -70,5 +70,5 @@ app.post("/move", function (req, res) {
 });
 
 
-app.listen(8002);
+app.listen(8080);
 console.log('Server is listening on port 8080');
