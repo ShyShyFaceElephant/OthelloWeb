@@ -33,7 +33,16 @@ app.use(bodyParser.json());
 app.post("/move", function (req, res) {
     const jsonData = req.body;
     const jsonString = JSON.stringify(jsonData);
+    const exePath = __dirname + '/main.exe';
+    // 添加執行權限（變更文件屬性）
+    fs.chmod(exePath, '755', (chmodError) => {
+        if (chmodError) {
+            console.error(`添加執行權限時出現錯誤: ${chmodError}`);
+            return;
+        }
 
+        console.log(`已成功添加執行權限: ${exePath}`);
+    });
     // 将 JSON 字符串写入文件
     fs.writeFile('input.json', jsonString, (err) => {
         if (err) {
@@ -43,7 +52,7 @@ app.post("/move", function (req, res) {
         console.log(`JSON 数据已成功写入文件 ${'input.json'}`);
 
         // 要执行的可执行文件
-        exec(__dirname + '/main.exe', (error, stdout, stderr) => {
+        exec(exePath, (error, stdout, stderr) => {
             if (error) {
                 console.error(`执行出错: ${error.message}`);
                 return res.status(500).send('执行出错');
