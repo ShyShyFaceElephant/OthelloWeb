@@ -55,25 +55,25 @@
         }
 
         .black {
-            background-image: url('black.png');
+            background-image: url('image/black.png');
             background-repeat: no-repeat;
             background-size: cover;
         }
 
         .white {
-            background-image: url('white.png');
+            background-image: url('image/white.png');
             background-repeat: no-repeat;
             background-size: cover;
         }
 
         .black-legal {
-            background-image: url('blackLegal.png');
+            background-image: url('image/blackLegal.png');
             background-repeat: no-repeat;
             background-size: cover;
         }
 
         .white-legal {
-            background-image: url('whiteLegal.png');
+            background-image: url('image/whiteLegal.png');
             background-repeat: no-repeat;
             background-size: cover;
         }
@@ -100,12 +100,11 @@
             <a class="w3-bar-item w3-button w3-padding-large w3-hide-medium w3-hide-large w3-right"
                 href="javascript:void(0)" onclick="myFunction()" title="Toggle Navigation Menu"><i
                     class="fa fa-bars"></i></a>
+            <div href="#" class="w3-bar-item w3-padding-large">Othello MCTS</div>
             <a href="#" class="w3-bar-item w3-button w3-padding-large">首頁</a>
-            <a href="#band" class="w3-bar-item w3-button w3-padding-large w3-hide-small">簡介</a>
-            <a href="#band" class="w3-bar-item w3-button w3-padding-large w3-hide-small">開發語言</a>
-            <a href="#band" class="w3-bar-item w3-button w3-padding-large w3-hide-small">演算法</a>
-            <a href="javascript:void(0)" class="w3-padding-large w3-hover-red w3-hide-small w3-right"><i
-                    class="fa fa-search"></i></a>
+            <a href="#band" class="w3-bar-item w3-button w3-padding-large w3-hide-small">專案簡介</a>
+            <a href="#band" class="w3-bar-item w3-button w3-padding-large w3-hide-small">MCTS</a>
+            <a href="#band" class="w3-bar-item w3-button w3-padding-large w3-hide-small">C++</a>
         </div>
     </div>
 
@@ -126,11 +125,11 @@
                 <div class="col-2 control-box">
                     <div style="margin-top: 90px;">
                         <div class="control-box-element">
-                            <img id="black" class="pawn" src="black.png" alt="">
+                            <img id="black" class="pawn" src="image/black.png" alt="">
                             <p id="n-black" style="font-size: 24px;">2</p>
                         </div>
                         <div class="control-box-element">
-                            <img id="white" class="pawn" src="white.png" alt="">
+                            <img id="white" class="pawn" src="image/white.png" alt="">
                             <p id="n-white" style="font-size: 24px;">2</p>
                         </div>
                     </div>
@@ -241,8 +240,41 @@
         <!-- The Tour Section -->
         <div class="w3-black" id="tour">
             <div class="w3-container w3-content w3-padding-64" style="max-width:800px">
-                <h2 class="w3-wide w3-center">專題介紹</h2>
-                <p class="w3-opacity w3-center"><i>專題介紹</i></p><br>
+                <h1 class="w3-wide w3-center">黑白棋規則說明</h1>
+                <div style="width: 700px;margin-top: 50px;">
+                    <div class="row m-4">
+                        <!--開局-->
+                        <div class="col-4">
+                            <img style="width: 100%;" src="image/step1.png" alt="">
+                        </div>
+                        <div class="col-8">
+                            <h3>開局</h3>
+                            <p style="color: gray;">遊戲開始時，黑棋與白棋分別會有兩子交錯放在棋盤中央，由黑棋先落子，接著換白棋。</p>
+                        </div>
+                    </div>
+                    <div class="row m-4">
+                        <!--落子-->
+                        <div class="col-4">
+                            <img style="width: 100%;" src="image/moveEx.gif" alt="">
+                        </div>
+                        <div class="col-8">
+                            <h3>落子</h3>
+                            <p style="color: gray;">任選一合法步落子，並翻轉敵方棋子。(若無合法步回合跳過)</p>
+                            <p style="color: gray;">翻轉：新落下的我方棋子與其他我方棋子連線上，所有敵方棋子將被翻轉，注意線上不可有空格。</p>
+                            <p style="color: gray;">合法步：棋盤上可使至少一個敵方棋子翻轉的位置。</p>
+                        </div>
+                    </div>
+                    <div class="row m-4">
+                        <!--勝負-->
+                        <div class="col-4">
+                            <img style="width: 100%;" src="image/end.png" alt="">
+                        </div>
+                        <div class="col-8">
+                            <h3>勝負</h3>
+                            <p style="color: gray;">當雙方皆無合法步時，遊戲結束，場上棋子數量最多者勝利。</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
