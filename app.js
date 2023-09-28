@@ -33,7 +33,7 @@ app.use(bodyParser.json());
 app.post("/move", function (req, res) {
     const jsonData = req.body;
     const jsonString = JSON.stringify(jsonData);
-    const exePath = __dirname + '/main.exe';
+    const exePath = __dirname + '/main';
     // 添加執行權限（變更文件屬性）
     fs.chmod(exePath, '755', (chmodError) => {
         if (chmodError) {
