@@ -31,7 +31,21 @@ $(document).ready(function () {
     for (var i = 0; i < 60; i++) {
         gameStates.push(new State());
     }
-    var step;
+    var step;//當先步數
+    var isAI = [false, false];
+    //AI切換
+    $('#white-ai').change(() => {
+        isAI[0] = !isAI[0];
+    });
+    $('#black-ai').change(() => {
+        isAI[1] = !isAI[1];
+    });
+    function AImove() {
+        if (idle && isAI[gameStates[step].color] && !gameStates[step].gameOver)
+            move(-1);
+    }
+    setInterval(AImove, 1000);
+
     // 更新UI
     function update() {
         for (var i = 0; i < 64; i++) {
@@ -39,22 +53,24 @@ $(document).ready(function () {
                 $("#" + i).removeClass().addClass("box black");
             else if (gameStates[step].table[Math.floor(i / 8)][i % 8] == 0)
                 $("#" + i).removeClass().addClass("box white");
+            else if (gameStates[step].color)
+                $("#" + i).removeClass().addClass("box empty");
             else
                 $("#" + i).removeClass().addClass("box empty");
         }
         for (const e of gameStates[step].legalStepList) {
-            $("#" + e).addClass("legal");
+            $("#" + e).addClass((gameStates[step].color ? "black" : "white") + "-legal");
         }
         $("#n-white").html(gameStates[step].numberOfPieces[0]);
         $("#n-black").html(gameStates[step].numberOfPieces[1]);
         if (gameStates[step].color) {
-            $("#white").css("opacity", "0.5");
-            $("#black").css("opacity", "1");
+            //$("#white").css("opacity", "0.3");
+            //$("#black").css("opacity", "1");
             $("#message").html("現在輪到黑方");
         }
         else {
-            $("#white").css("opacity", "1");
-            $("#black").css("opacity", "0.5");
+            //$("#white").css("opacity", "1");
+            //$("#black").css("opacity", "0.3");
             $("#message").html("現在輪到白方");
         }
         if (gameStates[step].gameOver) {
@@ -100,7 +116,7 @@ $(document).ready(function () {
             flag = 1;
         if (!flag)
             return;
-        workStart()//非閒置狀態
+        workStart()//非閒置狀態 idle=0
         // 轉換為 JSON 字符串
         const pack = new Pack(gameStates[step], pos)
         const jsonPack = JSON.stringify(pack);
@@ -136,14 +152,9 @@ $(document).ready(function () {
         if (idle)
             regret();
     });
-    //按下躺平AI
-    $("#AI-btn").on("click", function () {
-        if (idle)
-            move(-1);
-    });
     // 下子並將動作傳至後端
     $(".box").on("click", function () {
-        if (idle)
+        if (idle && !isAI[gameStates[step].color])//閒置 與 非AI方才能觸發
             move(this.id);
     });
     console.log(gameStates);
