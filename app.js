@@ -4,18 +4,6 @@ const { exec, execFile } = require('child_process');
 const fs = require('fs');
 var app = express();
 
-class State {
-    constructor() {
-        this.table = Array.from({ length: 8 }, () => Array(8).fill(-1));
-        this.legalStepList = [20, 29, 34, 43];
-        this.numberOfPieces = [2, 2];
-        this.color = 1;
-        this.gameOver = false;
-        this.table[3][3] = this.table[4][4] = 1;
-        this.table[4][3] = this.table[3][4] = 0;
-    }
-
-}
 // set the view engine to ejs
 app.set('view engine', 'ejs');
 //靜態檔案目錄
@@ -26,9 +14,13 @@ app.use(express.static('public'));
 app.get('/', function (req, res) {
     res.render('index.ejs');
 });
-
+app.get('/introduce', (req, res) => {
+    res.render('introduce.ejs');
+})
 app.use(bodyParser.json());
-
+app.get('/cpp', (req, res) => {
+    res.render('cpp.ejs');
+})
 
 app.post("/move", function (req, res) {
     const jsonData = req.body;

@@ -289,7 +289,7 @@ double MCTS::UCB(Node* node){
 }
 int MCTS::predict(){
     int ret=-1;
-    double mx=0;
+    double mx=-1;
     root->print();
     for(Node* child:root->children){
         cout<<"UCB="<<UCB(child)<<'\n';
@@ -299,7 +299,7 @@ int MCTS::predict(){
             winRate=1.*child->wins/child->simulations;
         else
             winRate=1.*(child->loses)/child->simulations;
-        if(winRate>mx){
+        if(winRate>=mx){
             mx=winRate;
             ret=child->newPosition;
         }
