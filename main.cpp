@@ -12,16 +12,16 @@ using json = nlohmann::json;
 using namespace std;
 
 class State{
+    friend class MCTS; //讓MCTS可以使用State的私人變數
     /*****************************
 
-    變數定義
+    類別State 變數定義
     table:棋盤 (-1空, 0白, 1黑)
     color:下棋方(0白,1黑)
     legalStepList:下棋方合法步陣列
     numberOfPieces[2]:棋子數(0白,1黑)
 
     ******************************/
-    friend class MCTS;
     private:
         int table[8][8];
         vector<int> legalStepList;
@@ -30,12 +30,16 @@ class State{
         bool gameOver;
     /*****************************
 
-    函數定義
-    move(state, position):下子並更新棋局(state)
-    count(table): 計算白子及黑子個數
-    updateLegalStepList(table, color): 更新下棋方合法步陣列
-    findLegalStep(table,position,direction,color): 以position座標與direction出發尋找合法步 -1:沒找到
-    flip(table,position,direction,color): 以position座標與direction出發按規則將棋子翻轉成color
+    類別State 函數定義
+    State():建構棋局及初始化
+    move(position):下子並更新棋局(state)，若position==-1則啟動AI落子
+    updateNumberOfPieces():更新黑白子的棋子數(0白,1黑)
+    updateLegalStepList(): 更新下棋方合法步陣列legalStepList
+    findLegalStep(position,direction): 以position座標與direction出發尋找合法步 -1:沒找到
+    flip(position,direction): 以position座標與direction出發按規則將棋子翻轉成color
+    isLegal(position):判斷位置是否為合法步
+    isGameOver():回傳私人變數gameOver(1遊戲結束/0遊戲未結束)
+    print():在終端機印出現在棋局，Debug用
 
     ******************************/
     public:
@@ -48,40 +52,78 @@ class State{
         bool isLegal(int position);
         bool isGameOver();
         void print();
-        State(json inputData);//用(棋局 + 新步) json建構
-        json toJson();//轉為棋局json檔
+    /*****************************
+
+    類別State 與json相關函數定義
+    State(inputData):用Json(包含:棋局、新步)建構棋局，「並以新落子位置更新棋局」
+    json toJson():將棋局打包成Json檔
+
+    ******************************/
+        State(json inputData);
+        json toJson();
+        
 };
+
 class Node{
+    /*****************************
+
+    類別Node 變數定義
+    state:棋局
+    wins:勝利次數(對於此節點玩家)
+    loses:失敗次數(對於此節點玩家)
+    simulations:仿真次數，走過此節點的次數
+    newPosition:新落子位置(相對於父節點)
+    *parent:指向父節點的指標
+    children:指向子節點指標陣列
+
+    ******************************/
     public:
         State state;
         int wins,loses,simulations,newPosition;
         Node *parent;
         vector<Node*> children;
+    /*****************************
+
+    類別Node 函數定義
+    Node(state):用state建構節點
+    print():在終端機印出節點，Debug用
+
+    ******************************/
         Node(State state);
         void print();
 };
+
 class MCTS{
+    /*****************************
+
+    類別MCTS 變數定義
+    *root:指向根節點的指標
+
+    ******************************/
     Node *root;
     /*****************************
 
-    函數定義
-    MCTS(state):初始化，放上root並擴展一次
-    predict(&root):用蒙特卡洛樹搜索尋找落子位置
-    selection(&root):用UCB尋找目標節點並回傳
-    expansion(&node):擴展節點
-    rollout(&node):仿真，隨機走到底，回傳-1平手、0白贏、1黑贏
-    backpropagation(&node):向父節點更新仿真次數、勝利次數
+    類別MCTS 變數定義
+    MCTS(state):初始化，放上root並擴展(expansion)一次
+    ~MCTS():解構MCTS時，呼叫deleteNode(root)釋放所有節點記憶體空間
+    deleteNode(*node):釋放所有節點記憶體空間
+    predict(*node):用蒙特卡洛樹搜索尋找落子位置
+    UCB(*node):回傳此節點的UCB值
+    selection(*root):用UCB尋找目標葉節點並回傳
+    expansion(*node):擴展節點
+    rollout(*node):仿真，隨機走到底，回傳-1平手、0白贏、1黑贏
+    backpropagation(*node):向父節點更新仿真次數、勝利次數
 
     ******************************/
     public:
         MCTS(State state);
         ~MCTS();
         void deleteNode(Node* node);
-        double UCB(Node*);
+        double UCB(Node* node);
         int predict();
-        Node* selection(Node*);
-        void expansion(Node*);
-        int rollout(State);
+        Node* selection(Node* node);
+        void expansion(Node* node);
+        int rollout(State state);
         void backpropagation(Node *node,int addWins,int addLoses,int addSimulations);
 };
 /*************State類別定義**************/
@@ -96,8 +138,7 @@ State::State() :  color(1), gameOver(false) {
 void State::move(int position){
     //position==-1 蒙特卡洛樹搜索找落子位置
     if(position==-1){
-        State State=*this;
-        MCTS model(State);
+        MCTS model(*this);
         position=model.predict();
         cout<<position<<'\n';
     }
@@ -202,22 +243,19 @@ State::State(json inputData){
     for(int i=0;i<64;i++){
         table[0][i]=inputData["gameState"]["table"][i/8][i%8];
     }
-    cout<<1<<'\n';
     numberOfPieces[0]=inputData["gameState"]["numberOfPieces"][0];
     numberOfPieces[1]=inputData["gameState"]["numberOfPieces"][1];
-    cout<<2<<'\n';
     for(int i=0;i<inputData["gameState"]["legalStepList"].size();i++){
         legalStepList.push_back(inputData["gameState"]["legalStepList"][i]);
     }
-    cout<<3<<'\n';
     color=inputData["gameState"]["color"];
     gameOver=inputData["gameState"]["gameOver"];
-    cout<<4<<'\n';
+    //最後更新棋局
     move(inputData["newPosition"]);
 }
 json State::toJson(){
     json jsonObject;
-    jsonObject["color"] = color; // 1 表示颜色值
+    jsonObject["color"] = color;
     jsonObject["gameOver"] = gameOver;
     jsonObject["numberOfPieces"] = {numberOfPieces[0], numberOfPieces[1]};
     jsonObject["legalStepList"] =json::array();
@@ -227,8 +265,7 @@ json State::toJson(){
     for (int i = 0; i < 8; i++) {
         json row;
         for (int j = 0; j < 8; j++) {
-            // 在此添加特定的颜色值
-            row.push_back(table[i][j]); // 1 表示颜色值
+            row.push_back(table[i][j]);
         }
         jsonObject["table"].push_back(row);
     }
@@ -270,7 +307,6 @@ MCTS::MCTS(State state){
     }
 }
 MCTS::~MCTS() {
-    // 在析构函数中释放节点
     deleteNode(root);
 }
 void MCTS::deleteNode(Node* node) {
@@ -336,7 +372,6 @@ void MCTS::expansion(Node* node){
 int MCTS::rollout(State state){
     if(state.isGameOver()){
         int delta=state.numberOfPieces[1]-state.numberOfPieces[0];
-        //cout<<"rollout result:"<<delta<<'\n';
         if(delta>0)
             return 1;
         if(delta<0)
@@ -361,30 +396,32 @@ void MCTS::backpropagation(Node *node,int addWins,int addLoses,int addSimulation
         backpropagation(node->parent,addLoses,addWins,addSimulations);
 }
 int main() {
+    /**********讀入input.json(內容:棋局、新步)********/
     ifstream ifs("input.json");
     if(!ifs.is_open()){
         cout<<"input.json開啟失敗\n";
         return 1;
     }
-
     cout<<"input.json開啟成功\n";
-    json inputData = json::parse(ifs);
-    State state(inputData);
+    json inputData = json::parse(ifs); //解析ifstream並放入json資料型態
     ifs.close();
     cout<<"input.json 關閉\n";
+    
+    /******************計算新棋局********************/
+    State state(inputData);//以json建構棋局state，「並以新落子位置更新棋局」
 
-    json outputData = state.toJson();
-    cout<<outputData.dump(4);
-    // Write JSON data to a file
+    /**********寫入output.json(內容:棋局)************/
+    json outputData = state.toJson();//將state轉為json資料型態
+    cout<<outputData.dump(4);//印出json轉字串型式，dump(4)代表縮排視為4個空格
     ofstream ofs("output.json");
-    if (ofs.is_open()) {
-        ofs << outputData.dump(4); // Write JSON to the file
-        ofs.close();
-        cout << "JSON data has been written to 'output.json'" << endl;
-    } else {
-        cerr << "Unable to open the file for writing." << endl;
+    if (!ofs.is_open()) {
+        cout<<"output.json開啟失敗\n";
         return 1;
-    }
+    } 
+    cout<<"output.json開啟成功\n";
+    ofs << outputData.dump(4); // 寫入ofstream
+    ofs.close();
+    cout<<"output.json 關閉\n";
 
     return 0;
 }
