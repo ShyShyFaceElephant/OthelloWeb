@@ -17,9 +17,10 @@ class State{
 
     類別State 變數定義
     table:棋盤 (-1空, 0白, 1黑)
-    color:下棋方(0白,1黑)
     legalStepList:下棋方合法步陣列
     numberOfPieces[2]:棋子數(0白,1黑)
+    color:下棋方(0白,1黑)
+    gameOver:遊戲是否結束
 
     ******************************/
     private:
@@ -287,22 +288,23 @@ void Node::print(){
 MCTS::MCTS(State state){
     root=new Node(state);
     expansion(root);
-    for(int k=0;k<10000;k++){
+    for(int k=0;k<200;k++){
         Node *node = selection(root);
         int addWins=0,addLoses=0,addSimulations=0;
-        if(node->simulations==0){
-            int x=rollout(node->state);
-            if(x==node->state.color)
-                addWins++;
-            else if(x!=-1)
-                addLoses++;
-            addSimulations++;
+        for(int i=0;i<50;i++){
+           if(node->simulations==0){
+                int x=rollout(node->state);
+                if(x==node->state.color)
+                    addWins++;
+                else if(x!=-1)
+                    addLoses++;
+                addSimulations++;
+            }
+            else {
+                expansion(node);
+                addSimulations++;
+            } 
         }
-        else {
-            expansion(node);
-            addSimulations++;
-        }
-
         backpropagation(node,addWins,addLoses,addSimulations);
     }
 }
