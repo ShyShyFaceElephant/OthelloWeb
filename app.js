@@ -1,6 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-const { exec, execFile } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 const fs = require('fs');
 var app = express();
 
@@ -20,49 +20,44 @@ app.get('/cpp', (req, res) => {
 })
 
 app.use(bodyParser.json());//引入解析json的工具
+
 app.post("/move", function (req, res) {
     const jsonData = req.body;
-    const jsonString = JSON.stringify(jsonData);
-    const exePath = __dirname + '/main';
-    // 添加執行權限（變更文件屬性）
-    fs.chmod(exePath, '755', (chmodError) => {
-        if (chmodError) {
-            console.error(`添加執行權限時出現錯誤: ${chmodError}`);
-            return;
-        }
-        console.log(`已成功添加執行權限: ${exePath}`);
+    const exePath = __dirname + '\\main.exe';
+
+    const cpp = spawn(exePath);
+
+    let cppOutput = '';
+    let cppError = '';
+
+    cpp.stdout.on('data', (data) => {
+        cppOutput += data.toString();
     });
 
-    /************更新棋局*************/
-    //將json(內容:棋局、新步)寫入input.json
-    fs.writeFile('input.json', jsonString, (err) => {
-        if (err) {
-            console.error('input.json寫檔錯誤:', err);
-            return res.status(500).send('input.json寫檔錯誤');
-        }
-        console.log('input.json寫檔成功');
-        // 執行CPP更新棋局
-        exec(exePath, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`CPP執行錯誤: ${error.message}`);
-                return res.status(500).send('CPP執行錯誤');
-            }
-            if (stderr) {
-                console.error(`CPP執行錯誤: ${stderr}`);
-                return res.status(500).send('CPP執行錯誤');
-            }
-            // 讀取output.json並傳回前端
-            fs.readFile('output.json', 'utf8', (err, data) => {
-                if (err) {
-                    console.error('output.json讀檔錯誤:', err);
-                    return res.status(500).send('output.json讀檔錯誤');
-                }
-                console.log('output.json讀檔成功:');
-                res.send(data);//新棋局傳回前端
-            });
-        });
+    cpp.stderr.on('data', (data) => {
+        cppError += data.toString();
     });
+
+    cpp.on('close', (code) => {
+        if (code !== 0) {
+            console.error('CPP 程式錯誤:', cppError);
+            return res.status(500).send('C++執行失敗');
+        }
+        try {
+            //console.log(cppOutput);
+            const result = JSON.parse(cppOutput);
+            res.send(result);
+        } catch (parseError) {
+            console.error('C++ 輸出解析錯誤:', parseError.message);
+            res.status(500).send('C++輸出解析失敗');
+        }
+    });
+
+    // 傳入 JSON 給 C++
+    cpp.stdin.write(JSON.stringify(jsonData));
+    cpp.stdin.end();
 });
+
 
 port = process.env.PORT || 8080
 app.listen(port, "0.0.0.0");

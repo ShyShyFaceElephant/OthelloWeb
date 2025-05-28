@@ -129,7 +129,7 @@ $(document).ready(function () {
             success: function (response) {
                 // 處理成功響應
                 state = new State()
-                state.copy(JSON.parse(response));
+                state.copy(response);
                 step += 1
                 gameStates[step] = state;
                 console.log("成功！", gameStates[step]);

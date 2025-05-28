@@ -41,6 +41,7 @@ class State{
     isLegal(position):判斷位置是否為合法步
     isGameOver():回傳私人變數gameOver(1遊戲結束/0遊戲未結束)
     print():在終端機印出現在棋局，Debug用
+    getColor():取得當前棋子顏色
 
     ******************************/
     public:
@@ -53,6 +54,7 @@ class State{
         bool isLegal(int position);
         bool isGameOver();
         void print();
+        int getColor();
     /*****************************
 
     類別State 與json相關函數定義
@@ -62,7 +64,7 @@ class State{
     ******************************/
         State(json inputData);
         json toJson();
-        
+
 };
 
 class Node{
@@ -141,7 +143,7 @@ void State::move(int position){
     if(position==-1){
         MCTS model(*this);
         position=model.predict();
-        cout<<position<<'\n';
+        //cout<<position<<'\n';
     }
     legalStepList = vector<int>(0);
     int r=position/8,c=position%8;
@@ -272,6 +274,9 @@ json State::toJson(){
     }
     return jsonObject;
 }
+int State::getColor(){
+    return color;
+}
 /*************Node類別定義**************/
 Node::Node(State x):wins(0),loses(0),simulations(0),newPosition(-1),state(x),parent(nullptr),children(vector<Node*>(0)){}
 void Node::print(){
@@ -284,6 +289,27 @@ void Node::print(){
     state.print();
     cout<<"========================\n";
 }
+/**************多執行緒定義**************/
+typedef struct threadParam{
+    MCTS *MCTS_ptr;
+    State *state_ptr;
+    int *addWins_ptr;
+    int *addLoses_ptr;
+}threadParam;
+void* runThread(void *ptr){
+    threadParam *param_ptr = (threadParam*)ptr;
+    MCTS *MCTS_ptr = param_ptr->MCTS_ptr;
+    State state = *(param_ptr->state_ptr);
+    int *addWins_ptr = param_ptr->addWins_ptr;
+    int *addLoses_ptr = param_ptr->addLoses_ptr;
+    int x=MCTS_ptr->rollout(state);
+    if(x==state.getColor())
+        (*addWins_ptr)++;
+    else if(x!=-1)
+        (*addLoses_ptr)++;
+    delete param_ptr;
+    return nullptr;
+}
 /*************MCTS類別定義**************/
 MCTS::MCTS(State state){
     root=new Node(state);
@@ -291,19 +317,20 @@ MCTS::MCTS(State state){
     for(int k=0;k<200;k++){
         Node *node = selection(root);
         int addWins=0,addLoses=0,addSimulations=0;
-        for(int i=0;i<50;i++){
-           if(node->simulations==0){
-                int x=rollout(node->state);
-                if(x==node->state.color)
-                    addWins++;
-                else if(x!=-1)
-                    addLoses++;
+        if(node->simulations==0){
+            pthread_t pid[50];
+            for(int i=0;i<50;i++){
+                threadParam *param = new threadParam{this, &(node->state), &addWins, &addLoses};
+                pthread_create(&pid[i], NULL, runThread, param);
+            }
+            for(int i=0;i<50;i++){
+                pthread_join(pid[i],NULL);
                 addSimulations++;
             }
-            else {
-                expansion(node);
-                addSimulations++;
-            } 
+        }
+        else {
+            expansion(node);
+            addSimulations++;
         }
         backpropagation(node,addWins,addLoses,addSimulations);
     }
@@ -328,10 +355,10 @@ double MCTS::UCB(Node* node){
 int MCTS::predict(){
     int ret=-1;
     double mx=-1;
-    root->print();
+    //root->print();
     for(Node* child:root->children){
-        cout<<"UCB="<<UCB(child)<<'\n';
-        child->print();
+        //cout<<"UCB="<<UCB(child)<<'\n';
+        //child->print();
         double winRate;
         if(root->state.color==child->state.color)
             winRate=1.*child->wins/child->simulations;
@@ -398,32 +425,16 @@ void MCTS::backpropagation(Node *node,int addWins,int addLoses,int addSimulation
         backpropagation(node->parent,addLoses,addWins,addSimulations);
 }
 int main() {
-    /**********讀入input.json(內容:棋局、新步)********/
-    ifstream ifs("input.json");
-    if(!ifs.is_open()){
-        cout<<"input.json開啟失敗\n";
-        return 1;
-    }
-    cout<<"input.json開啟成功\n";
-    json inputData = json::parse(ifs); //解析ifstream並放入json資料型態
-    ifs.close();
-    cout<<"input.json 關閉\n";
-    
-    /******************計算新棋局********************/
-    State state(inputData);//以json建構棋局state，「並以新落子位置更新棋局」
+    /********** 讀取 stdin 中的 json **********/
+    string inputStr((istreambuf_iterator<char>(cin)), istreambuf_iterator<char>());
+    json inputData = json::parse(inputStr);
 
-    /**********寫入output.json(內容:棋局)************/
-    json outputData = state.toJson();//將state轉為json資料型態
-    cout<<outputData.dump(4);//印出json轉字串型式，dump(4)代表縮排視為4個空格
-    ofstream ofs("output.json");
-    if (!ofs.is_open()) {
-        cout<<"output.json開啟失敗\n";
-        return 1;
-    } 
-    cout<<"output.json開啟成功\n";
-    ofs << outputData.dump(4); // 寫入ofstream
-    ofs.close();
-    cout<<"output.json 關閉\n";
+    /********** 處理棋局 **********/
+    State state(inputData); // 假設此處會根據輸入更新棋局
+    json outputData = state.toJson();
+
+    /********** 輸出 json 到 stdout **********/
+    cout << outputData.dump(); // 注意不要加縮排以方便前端解析
 
     return 0;
 }
