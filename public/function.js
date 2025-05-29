@@ -20,12 +20,12 @@ $(document).ready(function () {
 
     }
     class Pack {
-        constructor(state, newPos) {
+        constructor(state, newPos, kernel) {
             this.gameState = state;
             this.newPosition = newPos;
+            this.kernel = kernel;
         }
     }
-
     // 創建一個 State 對象的實例
     var gameStates = [];
     for (var i = 0; i < 60; i++) {
@@ -104,6 +104,11 @@ $(document).ready(function () {
     function workFinish() {
         idle = 1;
     }
+    //修改核心
+    let currentKernel = "kernel_v02_pthread";
+    $("#kernelSelector").on("change", function () {
+        currentKernel = $(this).val();  // 👈 當選擇改變時更新 kernel
+    });
     //落子
     function move(x) {
         var pos = parseInt(x);
@@ -118,7 +123,7 @@ $(document).ready(function () {
             return;
         workStart()//非閒置狀態 idle=0
         // 轉換為 JSON 字符串
-        const pack = new Pack(gameStates[step], pos)
+        const pack = new Pack(gameStates[step], pos, currentKernel)
         const jsonPack = JSON.stringify(pack);
         console.log(jsonPack)
         $.ajax({

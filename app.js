@@ -23,7 +23,21 @@ app.use(bodyParser.json());//引入解析json的工具
 
 app.post("/move", function (req, res) {
     const jsonData = req.body;
-    const exePath = __dirname + '\\main.exe';
+    const kernelName = jsonData.kernel || "kernel_v02_pthread";
+    delete jsonData.kernel;  // 不傳 kernel 給 C++，只傳遊戲資料
+
+    // ✅ 根據 kernelName 決定 exe 路徑
+    const kernelMap = {
+        "kernel_v02": "v02.exe",
+        "kernel_v02_pthread": "v02-pthread.exe"
+    };
+
+    const selectedExe = kernelMap[kernelName];
+    if (!selectedExe) {
+        return res.status(400).send("未知的 kernel: " + kernelName);
+    }
+
+    const exePath = __dirname + '\\kernel\\' + selectedExe;
 
     const cpp = spawn(exePath);
 
@@ -44,7 +58,6 @@ app.post("/move", function (req, res) {
             return res.status(500).send('C++執行失敗');
         }
         try {
-            //console.log(cppOutput);
             const result = JSON.parse(cppOutput);
             res.send(result);
         } catch (parseError) {
@@ -53,7 +66,7 @@ app.post("/move", function (req, res) {
         }
     });
 
-    // 傳入 JSON 給 C++
+    // ✅ 傳入純遊戲資料給 C++
     cpp.stdin.write(JSON.stringify(jsonData));
     cpp.stdin.end();
 });
