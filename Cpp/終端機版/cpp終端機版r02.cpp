@@ -256,8 +256,7 @@ MCTS::MCTS(State state){
                     addLoses++;
                 addSimulations++;
             }
-        }
-        else {
+        } else {
             expansion(node);
             addSimulations++;
         }

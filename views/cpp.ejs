@@ -123,6 +123,8 @@
 #include&lttuple&gt
 #include&ltset&gt
 #include &ltcmath&gt
+#include &ltpthread.h&gt // 多執行緒
+#include &ltchrono&gt //計時
 using namespace std;
 
 class State{
@@ -154,6 +156,7 @@ class State{
     isLegal(position):判斷位置是否為合法步
     isGameOver():回傳私人變數gameOver(1遊戲結束/0遊戲未結束)
     print():在終端機印出現在棋局，Debug用
+    getColor():取得當前棋子顏色
 
     ******************************/
     public:
@@ -166,6 +169,7 @@ class State{
         bool isLegal(int position);
         bool isGameOver();
         void print();
+        int getColor();
 };
 
 class Node{
@@ -342,7 +346,9 @@ void State::print(){
     cout&lt&lt"color:"&lt&ltcolor&lt&lt'\n';
     cout&lt&lt"gameOver:"&lt&ltgameOver&lt&lt'\n';
 }
-
+int State::getColor(){
+    return color;
+}
 /*************Node類別定義**************/
 Node::Node(State x):wins(0),loses(0),simulations(0),newPosition(-1),state(x),parent(nullptr),children(vector&ltNode*&gt(0)){}
 void Node::print(){
@@ -355,6 +361,27 @@ void Node::print(){
     state.print();
     cout&lt&lt"========================\n";
 }
+/**************多執行緒定義**************/
+typedef struct threadParam{
+    MCTS *MCTS_ptr;
+    State *state_ptr;
+    int *addWins_ptr;
+    int *addLoses_ptr;
+}threadParam;
+void* runThread(void *ptr){
+    threadParam *param_ptr = (threadParam*)ptr;
+    MCTS *MCTS_ptr = param_ptr-&gtMCTS_ptr;
+    State state = *(param_ptr-&gtstate_ptr);
+    int *addWins_ptr = param_ptr-&gtaddWins_ptr;
+    int *addLoses_ptr = param_ptr-&gtaddLoses_ptr;
+    int x=MCTS_ptr-&gtrollout(state);
+    if(x==state.getColor())
+        (*addWins_ptr)++;
+    else if(x!=-1)
+        (*addLoses_ptr)++;
+    delete param_ptr;
+    return nullptr;
+}
 /*************MCTS類別定義**************/
 MCTS::MCTS(State state){
     root=new Node(state);
@@ -362,19 +389,20 @@ MCTS::MCTS(State state){
     for(int k=0;k&lt200;k++){
         Node *node = selection(root);
         int addWins=0,addLoses=0,addSimulations=0;
-        for(int i=0;i&lt50;i++){
-           if(node-&gtsimulations==0){
-                int x=rollout(node-&gtstate);
-                if(x==node-&gtstate.color)
-                    addWins++;
-                else if(x!=-1)
-                    addLoses++;
+        if(node-&gtsimulations==0){
+            pthread_t pid[50];
+            for(int i=0;i&lt50;i++){
+                threadParam *param = new threadParam{this, &(node-&gtstate), &addWins, &addLoses};
+                pthread_create(&pid[i], NULL, runThread, param);
+            }
+            for(int i=0;i&lt50;i++){
+                pthread_join(pid[i],NULL);
                 addSimulations++;
             }
-            else {
-                expansion(node);
-                addSimulations++;
-            }
+        }
+        else {
+            expansion(node);
+            addSimulations++;
         }
         backpropagation(node,addWins,addLoses,addSimulations);
     }
@@ -467,9 +495,12 @@ void MCTS::backpropagation(Node *node,int addWins,int addLoses,int addSimulation
 }
 int main() {
     State state;
+    std::chrono::milliseconds duration{0};
     int i=1;
     while(!state.isGameOver()){
         cout&lt&lt"===========第"&lt&lti++&lt&lt"回合===========\n";
+        cout &lt&lt "上回合電腦運算時間: " &lt&lt duration.count() &lt&lt " 毫秒\n";
+        cout&lt&lt"============================\n";
         state.print();
         cout&lt&lt"============================\n";
         int pos;
@@ -482,15 +513,18 @@ int main() {
             }
             break;
         }
+        auto start = chrono::high_resolution_clock::now();
         state.move(pos);
+        auto end = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast&ltchrono::milliseconds&gt(end - start);
         cout &lt&lt "\x1B[2J\x1B[H";
+
     }
     cout&lt&lt"===========遊戲結束===========\n";
     state.print();
     cout&lt&lt"============================\n";
     return 0;
 }
-
         </code></pre>
 
         </div>
