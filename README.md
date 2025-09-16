@@ -92,7 +92,8 @@ OthelloWeb/
 - Node.js (建議 16+)
 - 瀏覽器 Chrome
 
-> ⚠️ 本專案建議於 Windows 系統執行，請安裝 MinGW 或 WSL 以支援 g++ 編譯器。
+> ⚠️ 本專案建議於 Windows 系統執行，請安裝 MinGW 或 WSL 以支援 g++ 編譯器，且須可以編譯 **phread.h** 函式庫。
+ 
 
 ### 安裝步驟
 
@@ -108,7 +109,10 @@ g++ -o kernel/v02-pthread.exe kernel/v02-pthread.cpp -O2
 # 安裝 Node.js 依賴並啟動伺服器
 npm install
 node app.js
+
+# 網站將發布在 http://localhost:8080/
 ```
+
 
 ---
 
