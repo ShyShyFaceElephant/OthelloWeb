@@ -15,14 +15,14 @@
 - **前後端分離架構**：C++ 提供演算效率，前端實作網頁互動介面 
   
 [![OthelloWeb Demo](/public/image/homePage.png)](https://youtu.be/_fBZeFRpCw8)
-**影片連結**：https://youtu.be/_fBZeFRpCw8
+> **影片連結**：https://youtu.be/_fBZeFRpCw8
 
 ### **多執行緒優化**
 
   利用多執行緒縮短2倍AI運算效率，可選擇單執行緒與多執行緒模式，實際體驗優化效果 
 
 [![OthelloWeb Demo](/public/image/multiThreadDemo.jpg)](https://youtu.be/Fcq8fPVk51s)
-**影片連結**：https://youtu.be/Fcq8fPVk51s
+>**影片連結**：https://youtu.be/Fcq8fPVk51s
 
 ---
 
